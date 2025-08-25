@@ -1,7 +1,9 @@
-// Using strict mode
 "use strict";
 
-// Event class using ES6 class syntax
+/* =============================
+   1. CLASSES
+============================= */
+
 class Event {
     #id;
     #title;
@@ -9,69 +11,52 @@ class Event {
     #attendees;
 
     constructor(title, date, attendees = []) {
-        // Validate inputs
-        if (typeof title !== 'string' || title.trim() === '') {
-            throw new TypeError('Event title must be a non-empty string');
+        if (typeof title !== "string" || title.trim() === "") {
+            throw new TypeError("Event title must be a non-empty string");
         }
-
         if (!(date instanceof Date) || isNaN(date)) {
-            throw new TypeError('Invalid date provided');
+            throw new TypeError("Invalid date provided");
         }
 
-        // Initialize properties
-        this.#id = Symbol('eventId'); // Using Symbol for unique ID
+        this.#id = Symbol("eventId");
         this.#title = title;
         this.#date = date;
-        this.#attendees = new Set(attendees); // Using Set to avoid duplicates
+        this.#attendees = new Set(attendees);
     }
 
     // Getters
-    get id() {
-        return this.#id;
-    }
+    get id() { return this.#id; }
+    get title() { return this.#title; }
+    get date() { return this.#date; }
+    get attendees() { return Array.from(this.#attendees); }
 
-    get title() {
-        return this.#title;
-    }
-
-    get date() {
-        return this.#date;
-    }
-
-    get attendees() {
-        return Array.from(this.#attendees); // Return as array
-    }
-
-    // Setters with validation
+    // Setters
     set title(newTitle) {
-        if (typeof newTitle !== 'string' || newTitle.trim() === '') {
-            throw new TypeError('Event title must be a non-empty string');
+        if (typeof newTitle !== "string" || newTitle.trim() === "") {
+            throw new TypeError("Event title must be a non-empty string");
         }
         this.#title = newTitle;
     }
-
     set date(newDate) {
         if (!(newDate instanceof Date) || isNaN(newDate)) {
-            throw new TypeError('Invalid date provided');
+            throw new TypeError("Invalid date provided");
         }
         this.#date = newDate;
     }
 
-    // Method to add attendee
+    // Methods
     addAttendee(attendee) {
-        if (typeof attendee !== 'string' || attendee.trim() === '') {
-            throw new TypeError('Attendee must be a non-empty string');
+        if (typeof attendee !== "string" || attendee.trim() === "") {
+            throw new TypeError("Attendee must be a non-empty string");
         }
         this.#attendees.add(attendee);
     }
 
-    // Method to check if event is happening today
     isHappeningToday() {
         const today = new Date();
         return this.#date.toDateString() === today.toDateString();
     }
 
-    // Method to get event details as an object
     getDetails() {
         return {
             id: this.#id,
@@ -83,101 +68,69 @@ class Event {
     }
 }
 
-// EventScheduler class
 class EventScheduler {
-    #events; // Private field
+    #events;
 
     constructor() {
-        this.#events = new Map(); // Using Map to store events by their ID
+        this.#events = new Map();
     }
 
-    // Add event to scheduler
     addEvent(event) {
         if (!(event instanceof Event)) {
-            throw new TypeError('Only Event instances can be added');
+            throw new TypeError("Only Event instances can be added");
         }
         this.#events.set(event.id, event);
     }
 
-    // Remove event by ID
-    removeEvent(eventId) {
-        return this.#events.delete(eventId);
-    }
+    removeEvent(eventId) { return this.#events.delete(eventId); }
+    getEvent(eventId) { return this.#events.get(eventId); }
 
-    // Get event by ID
-    getEvent(eventId) {
-        return this.#events.get(eventId);
-    }
-
-    // Get all events sorted by date
     getAllEvents() {
         return Array.from(this.#events.values())
             .sort((a, b) => a.date - b.date);
     }
 
-    // Get events happening on a specific date
     getEventsOnDate(date) {
-        if (!(date instanceof Date)) {
-            throw new TypeError('Invalid date provided');
-        }
-
-        return this.getAllEvents().filter(event =>
-            event.date.toDateString() === date.toDateString()
-        );
+        if (!(date instanceof Date)) throw new TypeError("Invalid date provided");
+        return this.getAllEvents().filter(ev => ev.date.toDateString() === date.toDateString());
     }
 
-    // Find events by title (case-insensitive)
-    findEventsByTitle(searchTerm) {
-        if (typeof searchTerm !== 'string') {
-            throw new TypeError('Search term must be a string');
-        }
-
-        const term = searchTerm.toLowerCase();
-        return this.getAllEvents().filter(event =>
-            event.title.toLowerCase().includes(term)
-        );
+    findEventsByTitle(term) {
+        if (typeof term !== "string") throw new TypeError("Search term must be a string");
+        const lower = term.toLowerCase();
+        return this.getAllEvents().filter(ev => ev.title.toLowerCase().includes(lower));
     }
 
-    // Get total number of events
-    getTotalEvents() {
-        return this.#events.size;
-    }
+    getTotalEvents() { return this.#events.size; }
+    getTodaysEvents() { return this.getEventsOnDate(new Date()); }
 
-    // Get today's events
-    getTodaysEvents() {
-        return this.getEventsOnDate(new Date());
-    }
-
-    // Get all unique attendees across all events
     getAllAttendees() {
-        const attendeesSet = new Set();
-        for (const event of this.#events.values()) {
-            for (const attendee of event.attendees) {
-                attendeesSet.add(attendee);
-            }
+        const set = new Set();
+        for (const ev of this.#events.values()) {
+            ev.attendees.forEach(a => set.add(a));
         }
-        return Array.from(attendeesSet);
+        return Array.from(set);
     }
 }
 
-// Utility functions
+/* =============================
+   2. UTILITIES
+============================= */
+
 const utils = {
-    // Format date to readable string
     formatDate: (date, options = {}) => {
         const defaultOptions = {
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
         };
-
-        const mergedOptions = { ...defaultOptions, ...options };
-        return new Intl.DateTimeFormat('en-US', mergedOptions).format(date);
+        const merged = { ...defaultOptions, ...options };
+        return new Intl.DateTimeFormat("en-US", merged).format(date);
     },
 
-    // Debounce function for search
     debounce: (func, delay) => {
         let timeoutId;
         return function (...args) {
@@ -187,169 +140,132 @@ const utils = {
     }
 };
 
-// Main application
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize scheduler
+/* =============================
+   3. DOM + STATE
+============================= */
+
+document.addEventListener("DOMContentLoaded", () => {
     const scheduler = new EventScheduler();
-
-    // DOM elements
-    const eventTitleInput = document.getElementById('eventTitle');
-    const eventDateInput = document.getElementById('eventDate');
-    const attendeeInput = document.getElementById('attendee');
-    const addAttendeeBtn = document.getElementById('addAttendeeBtn');
-    const createEventBtn = document.getElementById('createEventBtn');
-    const searchEventInput = document.getElementById('searchEvent');
-    const sortDateBtn = document.getElementById('sortDateBtn');
-    const todayEventsBtn = document.getElementById('todayEventsBtn');
-    const eventList = document.getElementById('eventList');
-    const attendeesList = document.getElementById('attendeesList');
-    const totalEventsElem = document.getElementById('totalEvents');
-    const todayEventsElem = document.getElementById('todayEvents');
-    const totalAttendeesElem = document.getElementById('totalAttendees');
-
-    // Current event attendees
     let currentAttendees = [];
 
-    // Add sample events for demonstration
-    try {
-        const sampleEvent1 = new Event(
-            'Team Meeting',
-            new Date(Date.now() + 86400000), // Tomorrow
-            ['Alice', 'Bob']
-        );
-        scheduler.addEvent(sampleEvent1);
+    // DOM Elements
+    const eventTitleInput = document.getElementById("eventTitle");
+    const eventDateInput = document.getElementById("eventDate");
+    const attendeeInput = document.getElementById("attendee");
+    const addAttendeeBtn = document.getElementById("addAttendeeBtn");
+    const createEventBtn = document.getElementById("createEventBtn");
+    const searchEventInput = document.getElementById("searchEvent");
+    const sortDateBtn = document.getElementById("sortDateBtn");
+    const todayEventsBtn = document.getElementById("todayEventsBtn");
 
-        const sampleEvent2 = new Event(
-            'Project Review',
-            new Date(Date.now() + 172800000), // Day after tomorrow
-            ['Bob', 'Charlie', 'Diana']
-        );
-        scheduler.addEvent(sampleEvent2);
+    const eventList = document.getElementById("eventList");
+    const attendeesList = document.getElementById("attendeesList");
+    const totalEventsElem = document.getElementById("totalEvents");
+    const todayEventsElem = document.getElementById("todayEvents");
+    const totalAttendeesElem = document.getElementById("totalAttendees");
 
-        const sampleEvent3 = new Event(
-            'Client Presentation',
-            new Date(),
-            ['Alice', 'Eve', 'Frank']
-        );
-        scheduler.addEvent(sampleEvent3);
+    /* =============================
+       4. RENDERING FUNCTIONS
+    ============================= */
 
-        updateEventList();
-        updateStats();
-    } catch (error) {
-        console.error('Error creating sample events:', error);
-    }
-
-    // Add attendee to current event
-    addAttendeeBtn.addEventListener('click', () => {
-        const attendee = attendeeInput.value.trim();
-        if (attendee) {
-            currentAttendees.push(attendee);
-            updateAttendeesList();
-            attendeeInput.value = '';
-        }
-    });
-
-    // Create new event
-    createEventBtn.addEventListener('click', () => {
-        try {
-            const title = eventTitleInput.value.trim();
-            const date = new Date(eventDateInput.value);
-
-            if (!title || isNaN(date.getTime())) {
-                alert('Please enter a valid title and date');
-                return;
-            }
-
-            const newEvent = new Event(title, date, currentAttendees);
-            scheduler.addEvent(newEvent);
-
-            // Reset form
-            eventTitleInput.value = '';
-            eventDateInput.value = '';
-            currentAttendees = [];
-            updateAttendeesList();
-
-            updateEventList();
-            updateStats();
-
-            alert('Event created successfully!');
-        } catch (error) {
-            alert(`Error creating event: ${error.message}`);
-        }
-    });
-
-    // Search events with debouncing
-    const debouncedSearch = utils.debounce(() => {
-        const searchTerm = searchEventInput.value.trim();
-        let events;
-
-        if (searchTerm) {
-            events = scheduler.findEventsByTitle(searchTerm);
-        } else {
-            events = scheduler.getAllEvents();
-        }
-
-        renderEventList(events);
-    }, 300);
-
-    searchEventInput.addEventListener('input', debouncedSearch);
-
-    // Sort events by date
-    sortDateBtn.addEventListener('click', () => {
-        const events = scheduler.getAllEvents();
-        renderEventList(events);
-    });
-
-    // Show today's events
-    todayEventsBtn.addEventListener('click', () => {
-        const events = scheduler.getTodaysEvents();
-        renderEventList(events);
-    });
-
-    // Update attendees list
-    function updateAttendeesList() {
+    function renderAttendees() {
         attendeesList.innerHTML = currentAttendees.length > 0
-            ? currentAttendees.map(attendee =>
-                `<div style="margin: 5px 0; padding: 5px; background: #f0f0f0; border-radius: 3px;">${attendee}</div>`
-            ).join('')
-            : '<div style="color: #999; font-style: italic;">No attendees added</div>';
+            ? currentAttendees.map(a => `
+                <div style="margin:5px 0; padding:5px; background:#f0f0f0; border-radius:3px;">${a}</div>
+            `).join("")
+            : `<div style="color:#999; font-style:italic;">No attendees added</div>`;
     }
 
-    // Update event list
-    function updateEventList() {
-        const events = scheduler.getAllEvents();
-        renderEventList(events);
-    }
-
-    // Render event list
-    function renderEventList(events) {
+    function renderEvents(events) {
         if (events.length === 0) {
-            eventList.innerHTML = '<li class="event-item">No events found</li>';
+            eventList.innerHTML = `<li class="event-item">No events found</li>`;
             return;
         }
-
-        eventList.innerHTML = events.map(event => {
-            const details = event.getDetails();
+        eventList.innerHTML = events.map(ev => {
+            const d = ev.getDetails();
             return `
-                        <li class="event-item">
-                            <div class="event-title">${details.title}</div>
-                            <div class="event-details">
-                                <span class="event-date">${utils.formatDate(details.date)}</span>
-                                <span class="event-attendees">${details.attendees.length} attendees</span>
-                            </div>
-                            ${details.isToday ? '<div style="color: green; font-weight: bold; margin-top: 5px;">Happening Today!</div>' : ''}
-                        </li>
-                    `;
-        }).join('');
+                <li class="event-item">
+                    <div class="event-title">${d.title}</div>
+                    <div class="event-details">
+                        <span class="event-date">${utils.formatDate(d.date)}</span>
+                        <span class="event-attendees">${d.attendees.length} attendees</span>
+                    </div>
+                    ${d.isToday ? `<div style="color:green;font-weight:bold;margin-top:5px;">Happening Today!</div>` : ""}
+                </li>
+            `;
+        }).join("");
     }
 
-    // Update statistics
+    function updateEventList() {
+        renderEvents(scheduler.getAllEvents());
+    }
+
     function updateStats() {
         totalEventsElem.textContent = scheduler.getTotalEvents();
         todayEventsElem.textContent = scheduler.getTodaysEvents().length;
         totalAttendeesElem.textContent = scheduler.getAllAttendees().length;
     }
 
-    // Initialize attendees list
-    updateAttendeesList();
+    /* =============================
+       5. EVENT HANDLERS
+    ============================= */
+
+    addAttendeeBtn.addEventListener("click", () => {
+        const name = attendeeInput.value.trim();
+        if (name) {
+            currentAttendees.push(name);
+            renderAttendees();
+            attendeeInput.value = "";
+        }
+    });
+
+    createEventBtn.addEventListener("click", () => {
+        try {
+            const title = eventTitleInput.value.trim();
+            const date = new Date(eventDateInput.value);
+            if (!title || isNaN(date.getTime())) {
+                alert("Please enter a valid title and date");
+                return;
+            }
+            const ev = new Event(title, date, currentAttendees);
+            scheduler.addEvent(ev);
+
+            eventTitleInput.value = "";
+            eventDateInput.value = "";
+            currentAttendees = [];
+            renderAttendees();
+
+            updateEventList();
+            updateStats();
+            alert("Event created successfully!");
+        } catch (err) {
+            alert(`Error creating event: ${err.message}`);
+        }
+    });
+
+    const debouncedSearch = utils.debounce(() => {
+        const term = searchEventInput.value.trim();
+        const events = term ? scheduler.findEventsByTitle(term) : scheduler.getAllEvents();
+        renderEvents(events);
+    }, 300);
+    searchEventInput.addEventListener("input", debouncedSearch);
+
+    sortDateBtn.addEventListener("click", () => renderEvents(scheduler.getAllEvents()));
+    todayEventsBtn.addEventListener("click", () => renderEvents(scheduler.getTodaysEvents()));
+
+    /* =============================
+       6. INITIALIZATION
+    ============================= */
+
+    try {
+        scheduler.addEvent(new Event("Team Meeting", new Date(Date.now() + 86400000), ["Alice", "Bob"]));
+        scheduler.addEvent(new Event("Project Review", new Date(Date.now() + 172800000), ["Bob", "Charlie", "Diana"]));
+        scheduler.addEvent(new Event("Client Presentation", new Date(), ["Alice", "Eve", "Frank"]));
+    } catch (err) {
+        console.error("Error creating sample events:", err);
+    }
+
+    renderAttendees();
+    updateEventList();
+    updateStats();
 });
